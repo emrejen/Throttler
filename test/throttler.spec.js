@@ -1,56 +1,58 @@
+import {MILLISECONDS_PER_SECOND, SECOND} from 'time-constants';
 import { expect } from 'chai';
-import Throttler from '../src/throttler';
-import DateTimeConstants from '../src/DateTimeConstants';
+import Throttler from '../src/Throttler';
 
-//should accept connection by ip
-//should refuse a connection from the same ip
-//should allow a 2n connection from a differet ip
-//should allow connection after window has passed
+//allow connection from ip
+//throttele connection from same ip for the 2nd time
+//allow connection from different ip
+//after window has passed - allow connection again
 
+
+class UberDate extends Date {
+  waitFor(milis) {
+    this.setTime(this.getTime() + milis);
+  }
+}
 describe('Throttler test suite', () => {
   let throttler;
   let clock;
   const IP = '127.0.0.1';
-  const OTHER_IP = '127.2.2.1';
-  const MAX_CONNECTIONS_ALLOWED = 1;
-  const WINDOW_SIZE_IN_MINUTES = 1;
+  const OTHER_IP = '127.0.0.2';
+  const maxConnectionsAllowed = 1;
+  const windowSizeInMinutes = 1;
+
+  function moreThenOneMinute() {
+    return windowSizeInMinutes * MILLISECONDS_PER_SECOND * SECOND + 2000;
+  }
 
   beforeEach(() => {
-    Date.prototype.sleep = function (miliesToAdd) {
-      this.setTime(this.getTime() + miliesToAdd);
-    };
-    clock = new Date();
-    throttler = new Throttler(MAX_CONNECTIONS_ALLOWED, WINDOW_SIZE_IN_MINUTES, clock);
+    clock = new UberDate();
+    throttler = new Throttler(maxConnectionsAllowed, windowSizeInMinutes, clock);
   });
 
-  afterEach(() => {
-    delete Date.prototype.sleep;
+  it('should not crache', () => {
+    expect(() => { new Throttler() }).not.to.throw;
+    expect(throttler).to.be.instanceOf(Throttler);
   });
 
-  it('should not crach', () => {
-    expect(() => { throttler }).not.to.throw();
-  });
-
-  it('should accept a connection', () => {
+  it('should allow connection by ip', () => {
     expect(throttler.connect(IP)).to.be.true;
   });
 
-  it('should refuse to accept a connection from the same ip', () => {
+  it('should throttle 2nd connection', () => {
     expect(throttler.connect(IP)).to.be.true;
     expect(throttler.connect(IP)).to.be.false;
   });
 
-  it('should accept a connection from a different IP', () => {
+  it('should allow connection from diffent IP', () => {
     expect(throttler.connect(IP)).to.be.true;
     expect(throttler.connect(OTHER_IP)).to.be.true;
   });
 
-  it('should accept connection after time has passed', () => {
+  it('should allow connection after window has passed', () => {
     expect(throttler.connect(IP)).to.be.true;
-    clock.sleep(moreThenOneMinute(WINDOW_SIZE_IN_MINUTES));
+    clock.waitFor(moreThenOneMinute());
     expect(throttler.connect(IP)).to.be.true;
   });
-
 });
 
-const moreThenOneMinute = (WINDOW_SIZE_IN_MINUTES) => DateTimeConstants.MILLIS_PER_MINUTE * WINDOW_SIZE_IN_MINUTES + 1

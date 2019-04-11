@@ -4,6 +4,6 @@ export default class Counter {
   }
 
   incrementAndGet() {
-    return ++this.counter;
+    return ++this.counter; 
   }
 }

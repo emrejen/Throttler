@@ -1,37 +1,41 @@
-import Counter from './counter';
-import Invocation from './invocation';
-import DateTimeConstants from './DateTimeConstants';
+import { MILLISECONDS_PER_SECOND, SECOND } from 'time-constants';
+import Counter from './Counter';
+import Invocation from './Invocation';
 
 export default class Throttler {
-
-  constructor(maxConnections = 1, windowInMinutes = 1, clock = new Date()) {
-    this.maxConnections = maxConnections;
-    this.windowInMinutes = windowInMinutes;
-    this.connections = new Map();
-    this.clock = clock;
-  }
-
-  addInvocationIfMissing(key) {
-    if (!this.connections.has(key)) {
-      this.connections.set(key, new Invocation(new Counter(), new Date()));
+  constructor(maxConnectionAllowed = 1, windowSizeInMinutes = 1, clock) {
+    this.config = {
+      maxConnectionAllowed,
+      windowSizeInMinutes,
+      clock
     }
-    return this.connections.get(key);
+    this.connections = new Map()
   }
 
-  connect(key) {
-    const invocation = this.addInvocationIfMissing(key);
-    if (this.windowHasPassed(invocation)) {
-      this.connections.delete(key);
-      return this.connect(key);
-    }
-    return this.canConnectBy(key);
+  connect(ip) {
+    const invocation = this.addIfMissing(ip);
+    return this.windowHasPassed(invocation) ?
+      this.removeInvocationAndTryAgain(ip) :
+      this.notExceddedConnections(ip);
   }
 
-  canConnectBy(key) {
-    return this.connections.get(key).counter.incrementAndGet() <= this.maxConnections;
+  removeInvocationAndTryAgain(ip) {
+    this.connections.delete(ip);
+    return this.connect(ip);
   }
 
   windowHasPassed(invocation) {
-    return this.clock.getTime() - invocation.clock.getTime() > (this.windowInMinutes * DateTimeConstants.MILLIS_PER_MINUTE);
+    return this.config.clock.getTime() - invocation.invocationTime > (this.config.windowSizeInMinutes * SECOND * MILLISECONDS_PER_SECOND);
+  }
+
+  notExceddedConnections(ip) {
+    return this.connections.get(ip).counter.incrementAndGet() <= this.config.maxConnectionAllowed;
+  }
+
+  addIfMissing(ip) {
+    if (!this.connections.has(ip)) {
+      this.connections.set(ip, new Invocation(new Counter(), this.config.clock.getTime()));
+    }
+    return this.connections.get(ip);
   }
 }

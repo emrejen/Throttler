@@ -1,6 +1,6 @@
 export default class Invocation {
-  constructor(counter, clock) {
+  constructor(counter, invocationTime) {
     this.counter = counter;
-    this.clock = clock;
+    this.invocationTime = invocationTime;
   }
 }
