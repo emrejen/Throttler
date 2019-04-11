@@ -9,7 +9,7 @@ export default class Throttler {
       windowSizeInMinutes,
       clock
     }
-    this.connections = new Map()
+    this.connections = new Map();
   }
 
   connect(ip) {
