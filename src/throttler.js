@@ -13,6 +13,7 @@ export default class Throttler {
   }
 
   connect(ip) {
+    
     const invocation = this.addIfMissing(ip);
     return this.windowHasPassed(invocation) ?
       this.removeInvocationAndTryAgain(ip) :

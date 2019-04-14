@@ -9,6 +9,9 @@ export default class Throttler {
       windowSizeInMinutes
     }
     this.cache = new NodeCache({ checkperiod: 100, useClones: false });
+    this.cache.on('expired', (key, value) => {
+      console.log('-->expired', key, value);
+    });
   }
 
   connect(ip) {
