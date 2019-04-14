@@ -1,5 +1,4 @@
 node_modules/
 dist/
-test/Counter.spec.js
 .nyc_output/
 coverage/
